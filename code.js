@@ -1,3 +1,7 @@
+// Mostra a UI
+figma.showUI(__html__, { width: 300, height: 200 });
+
+// Recebe mensagem da UI
 figma.ui.onmessage = async (msg) => {
   if (msg.type === "generate-analysis") {
     const selection = figma.currentPage.selection;
@@ -7,30 +11,20 @@ figma.ui.onmessage = async (msg) => {
       return;
     }
 
+    // 🔑 Carrega a fonte antes de criar qualquer texto
     await figma.loadFontAsync({ family: "Inter", style: "Regular" });
 
     for (const node of selection) {
       if (node.type === "FRAME") {
-        // Cria retângulo arredondado (balão)
-        const balloon = figma.createRectangle();
-        balloon.resize(120, 40);
-        balloon.cornerRadius = 12;
-        balloon.fills = [{ type: "SOLID", color: { r: 1, g: 1, b: 0.6 } }]; // amarelinho
+        // Cria annotation "Teste."
+        const annotation = figma.createText();
+        annotation.characters = "Teste.";
 
-        // Cria o texto
-        const text = figma.createText();
-        text.characters = "Teste.";
-        text.fontSize = 14;
-        text.x = 10;
-        text.y = 10;
+        // Posiciona acima da tela
+        annotation.x = node.x + 20;
+        annotation.y = node.y - 40;
 
-        // Agrupa retângulo + texto
-        const group = figma.group([balloon, text], figma.currentPage);
-        group.name = "Annotation";
-
-        // Posiciona ao lado do frame
-        group.x = node.x + node.width + 20;
-        group.y = node.y + 20;
+        figma.currentPage.appendChild(annotation);
       }
     }
 
