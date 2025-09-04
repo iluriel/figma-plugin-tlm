@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      body {
+        font-family: sans-serif;
+        margin: 16px;
+      }
+      h2 {
+        margin-bottom: 8px;
+      }
+      p {
+        margin-bottom: 16px;
+        font-size: 14px;
+      }
+      button {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        background: #0066ff;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #0050cc;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Touch Level Model</h2>
+    <p>Selecione uma ou mais telas que deseja analisar.</p>
+    <button id="analyze">Gerar análise</button>
+
+    <script>
+      document.getElementById("analyze").onclick = () => {
+        parent.postMessage({ pluginMessage: { type: "generate-analysis" } }, "*");
+      };
+    </script>
+  </body>
+</html>
