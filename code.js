@@ -1,5 +1,5 @@
 // UI
-figma.showUI(__html__, { width: 520, height: 120 });
+figma.showUI(__html__, { width: 600, height: 520 });
 
 /* =====================
  * Constantes
@@ -60,6 +60,51 @@ function normalizeLabel(s) {
     .replace(/\s+/g, ' ')
     .trim();
 }
+// Checagens utilitárias
+function canFindAll(n) { return !!(n && typeof n.findAll === 'function'); }
+function isDescendantOf(node, ancestor) {
+  var p = node && node.parent;
+  while (p) { if (p === ancestor) return true; p = p.parent; }
+  return false;
+}
+
+// Áreas nomeadas (status-bar / header)
+function isInsideArea(node, rootFrame, rx) {
+  var p = node;
+  while (p) {
+    if (p.name && rx.test(String(p.name))) return true;
+    if (p === rootFrame) break;
+    p = p.parent;
+  }
+  return false;
+}
+function isInsideKeyboard(node, rootFrame) {
+  return isInsideArea(node, rootFrame, /keyboard/i);
+}
+function isInsideStatusBar(node, rootFrame) { return isInsideArea(node, rootFrame, /status[\-\s]?bar/i); }
+function isInsideHeader(node, rootFrame) { return isInsideArea(node, rootFrame, /header/i); }
+
+// "input" e "text field"
+function nameLooksLikeInput(name) {
+  name = String(name || '');
+  // input | text field | text-field | textfield
+  return /(input|text\s*[\-\s]?field|textfield)/i.test(name);
+}
+function nameLooksLikeButton(name) {
+  name = String(name || '');
+  return /button/i.test(name);
+}
+
+// Encontra o ancestral mais próximo que tenha filhos (suporte a findAll/children)
+function nearestChildrenContainer(node) {
+  var p = node;
+  while (p) {
+    if (canFindAll(p)) return p;
+    p = p.parent;
+  }
+  return null;
+}
+
 function canFindAll(n) {
   return !!(n && typeof n.findAll === 'function');
 }
@@ -88,27 +133,26 @@ function countDigits(s) {
   return m ? m.length : 0;
 }
 
+
 // Mantém apenas containers "folha" dentro do conjunto de containers (remove quem contém outro container da lista)
+
+// Mantém apenas containers "folha" (sem outro container da mesma lista dentro dele)
 function filterInputContainersLeaves(containers) {
   var byId = {};
-  for (var i = 0; i < containers.length; i++) {
-    if (containers[i] && containers[i].id) byId[containers[i].id] = true;
-  }
+  for (var i = 0; i < containers.length; i++) if (containers[i] && containers[i].id) byId[containers[i].id] = true;
   var leaves = [];
   for (var j = 0; j < containers.length; j++) {
     var c = containers[j];
     var hasDescendant = false;
     if (canFindAll(c)) {
       var desc = c.findAll(function (n) { return !!(n && n.id && byId[n.id]); }) || [];
-      // Se algum descendente também está na lista (id diferente), então c não é folha
-      for (var k = 0; k < desc.length; k++) {
-        if (desc[k] !== c && byId[desc[k].id]) { hasDescendant = true; break; }
-      }
+      for (var k = 0; k < desc.length; k++) { if (desc[k] !== c && byId[desc[k].id]) { hasDescendant = true; break; } }
     }
     if (!hasDescendant) leaves.push(c);
   }
   return leaves;
 }
+
 
 function canFindAll(n) {
   return !!(n && typeof n.findAll === 'function');
@@ -140,6 +184,7 @@ function getVisibleTextDescendants(container, rootFrame) {
   }
   return out;
 }
+
 
 // Retorna o TEXT "logo acima" do container (mais próximo), com alguma sobreposição horizontal
 function getClosestLabelAbove(container, rootFrame) {
@@ -175,10 +220,11 @@ function getClosestLabelAbove(container, rootFrame) {
 }
 
 // Encontra containers de input + rótulos e conteúdo
+
 function findInputsAndLabels(rootFrame) {
   var containers = [];
 
-  // 1) containers cujo name contém "input"
+  // 1) containers cujo name contem input/text field
   var namedContainers = rootFrame.findAll(function (n) {
     var t = n.type;
     if (t === 'FRAME' || t === 'COMPONENT' || t === 'INSTANCE' || t === 'GROUP' || t === 'SECTION') {
@@ -188,8 +234,10 @@ function findInputsAndLabels(rootFrame) {
   }) || [];
   for (var i = 0; i < namedContainers.length; i++) containers.push(namedContainers[i]);
 
-  // 2) TEXT com name "input" -> usa ancestral mais próximo com filhos como container
-  var inputTexts = rootFrame.findAll(function (n) { return n.type === 'TEXT' && nameLooksLikeInput(n.name); }) || [];
+  // 2) TEXT com name "input"/"text field"/"textfield" -> ancestral com filhos vira container
+  var inputTexts = rootFrame.findAll(function (n) {
+    return n.type === 'TEXT' && nameLooksLikeInput(n.name);
+  }) || [];
   for (var j = 0; j < inputTexts.length; j++) {
     var cont = nearestChildrenContainer(inputTexts[j].parent || inputTexts[j]);
     if (cont) containers.push(cont);
@@ -207,19 +255,21 @@ function findInputsAndLabels(rootFrame) {
   }
   containers = dedup;
 
-  // Visíveis apenas
-  var visible = [];
+  // Filtra visíveis e fora de status-bar
+  var filtered = [];
   for (var v = 0; v < containers.length; v++) {
-    if (isNodeVisibleInFrame(containers[v], rootFrame)) visible.push(containers[v]);
+    if (!isNodeVisibleInFrame(containers[v], rootFrame)) continue;
+    if (isInsideStatusBar(containers[v], rootFrame)) continue;
+    filtered.push(containers[v]);
   }
-  containers = visible;
+  containers = filtered;
 
-  // Mantém apenas "folhas" (sem outro container de input dentro)
+  // Mantém apenas "folhas"
   containers = filterInputContainersLeaves(containers);
 
   // 3) Para cada container, decide label e conteúdo
   var result = [];
-  var usedLabelIds = {}; // evita reutilizar o mesmo label em dois inputs
+  var usedLabelIds = {}; // evita usar o mesmo label em dois inputs
 
   for (var k = 0; k < containers.length; k++) {
     var cont = containers[k];
@@ -245,15 +295,12 @@ function findInputsAndLabels(rootFrame) {
 
     if (labelNode) usedLabelIds[labelNode.id] = true;
 
-    result.push({
-      container: cont,
-      labelNode: labelNode,
-      contentNodes: contentNodes
-    });
+    result.push({ container: cont, labelNode: labelNode, contentNodes: contentNodes });
   }
 
   return result;
 }
+
 
 // Retorna true se o texto bruto parece ser um rótulo de campo de input
 function isLikelyInputFieldLabel(raw) {
@@ -277,10 +324,13 @@ function detectTapButtons(frame) {
     return !!n.name && nameLooksLikeButton(n.name);
   }) || [];
 
-  // Visíveis
+  // Visíveis e fora de status-bar / keyboard
   var visible = [];
   for (var i = 0; i < all.length; i++) {
-    if (isNodeVisibleInFrame(all[i], frame)) visible.push(all[i]);
+    if (!isNodeVisibleInFrame(all[i], frame)) continue;
+    if (isInsideStatusBar(all[i], frame)) continue;
+    if (isInsideKeyboard(all[i], frame)) continue; // <<< NOVO
+    visible.push(all[i]);
   }
 
   // Folhas
@@ -295,17 +345,28 @@ function detectTapButtons(frame) {
 
     for (var k = 0; k < descendants.length; k++) {
       if (descendants[k] === node) continue;
-      if (isNodeVisibleInFrame(descendants[k], frame)) { hasButtonDesc = true; break; }
+      if (!isNodeVisibleInFrame(descendants[k], frame)) continue;
+      if (isInsideStatusBar(descendants[k], frame)) continue;
+      if (isInsideKeyboard(descendants[k], frame)) continue; // <<< NOVO
+      hasButtonDesc = true; break;
     }
     if (!hasButtonDesc) leaves.push(node);
   }
 
-  leaves.sort(function (a, b) {
+  // Ignora o "back" no header
+  var headerBackIds = getHeaderBackButtonIds(frame, leaves);
+  var filtered = [];
+  for (var m = 0; m < leaves.length; m++) {
+    if (!headerBackIds[leaves[m].id]) filtered.push(leaves[m]);
+  }
+
+  // Ordena por Y
+  filtered.sort(function (a, b) {
     var ay = ('y' in a ? a.y : 1e12), by = ('y' in b ? b.y : 1e12);
     return ay - by;
   });
 
-  return leaves;
+  return filtered;
 }
 
 function buildKeystrokeFields(frame, inputs) {
@@ -328,15 +389,11 @@ function buildKeystrokeFields(frame, inputs) {
     var canonical = matched.canonical;
     var isNumeric = (canonical === 'CPF' || canonical === 'CEP');
 
-    // Base: count padrão por tipo
-    var count = matched.count;
-
-    // Override por máscara (para campos numéricos): usa apenas os dígitos dos contentNodes
+    var count = matched.count; // base
     if (isNumeric) {
       var maxDigits = 0;
       var contNodes = inputs[i].contentNodes || [];
       for (var c = 0; c < contNodes.length; c++) {
-        // precisa estar visível
         if (!isNodeVisibleInFrame(contNodes[c], frame)) continue;
         var digits = countDigits(contNodes[c].characters || '');
         if (digits > maxDigits) maxDigits = digits;
@@ -437,7 +494,6 @@ function buildReadingBreakdown(frame, excludeSet) {
   var arr = [];
   var total = 0;
 
-  // Ordena por Y (sequência visual)
   var ordered = texts
     .map(function (t) { return { n: t, y: t.y }; })
     .sort(function (a, b) { return a.y - b.y; })
@@ -446,16 +502,14 @@ function buildReadingBreakdown(frame, excludeSet) {
   for (var i = 0; i < ordered.length; i++) {
     var t = ordered[i];
 
-    // Excluir se não estiver visível
     if (!isNodeVisibleInFrame(t, frame)) continue;
-
-    // Excluir se for conteúdo de input (placeholder/valor)
+    if (isInsideStatusBar(t, frame)) continue;
+    if (isInsideKeyboard(t, frame)) continue; // <<< NOVO: ignora teclado
     if (excludeSet[t.id]) continue;
 
     var raw = (t.characters || '').trim();
     if (!raw) continue;
 
-    // Contagem de palavras e regra de leitura
     var words = countWords(raw);
     if (words <= 0) continue;
 
@@ -463,19 +517,163 @@ function buildReadingBreakdown(frame, excludeSet) {
     var seconds = readWords * 0.3;
     if (seconds <= 0) continue;
 
-    // Nome amigável: usa name do texto, ou do ancestral
     var labelName = (t.name && t.name.trim()) ? t.name.trim() : (nearestNamedAncestor(t) || 'Texto');
-
     arr.push({ label: labelName + ' (' + words + ')', seconds: seconds });
     total += seconds;
   }
 
-  // Inverter subitens (B, A)
-  arr.reverse();
-
+  arr.reverse(); // ordem invertida (B, A)
   return { items: arr, total: total };
 }
 
+// Botão "voltar": primeiro button dentro de cada header (esquerda->direita; empate: mais alto)
+function getHeaderBackButtonIds(frame, buttonLeaves) {
+  var headers = frame.findAll(function (n) { return !!n.name && /header/i.test(n.name); }) || [];
+  var ids = {};
+  for (var h = 0; h < headers.length; h++) {
+    var header = headers[h];
+    if (!isNodeVisibleInFrame(header, frame)) continue;
+
+    // buttons dentro do header
+    var inHeader = [];
+    for (var i = 0; i < buttonLeaves.length; i++) {
+      if (isDescendantOf(buttonLeaves[i], header)) inHeader.push(buttonLeaves[i]);
+    }
+    if (!inHeader.length) continue;
+
+    // escolhe o mais à esquerda; empate -> mais alto
+    var best = null, bx = 1e12, by = 1e12;
+    for (var j = 0; j < inHeader.length; j++) {
+      var b = inHeader[j];
+      var bb = getAbsBounds(b);
+      var x = bb.x, y = bb.y;
+      if (x < bx || (x === bx && y < by)) { best = b; bx = x; by = y; }
+    }
+    if (best && best.id) ids[best.id] = true;
+  }
+  return ids;
+}
+
+// Banners: contam 1 Tap se não tiverem botões dentro
+function detectBannerTaps(frame) {
+  var res = [];
+  var banners = frame.findAll(function (n) { return !!n.name && /banner/i.test(n.name); }) || [];
+  for (var i = 0; i < banners.length; i++) {
+    var b = banners[i];
+    if (!isNodeVisibleInFrame(b, frame)) continue;
+    if (isInsideStatusBar(b, frame)) continue;
+    if (isInsideKeyboard(b, frame)) continue; // <<< NOVO
+
+    var hasVisibleButton = false;
+    if (canFindAll(b)) {
+      var btns = b.findAll(function (n) { return !!n.name && nameLooksLikeButton(n.name); }) || [];
+      for (var k = 0; k < btns.length; k++) {
+        if (!isNodeVisibleInFrame(btns[k], frame)) continue;
+        if (isInsideStatusBar(btns[k], frame)) continue;
+        if (isInsideKeyboard(btns[k], frame)) continue; // <<< NOVO
+        hasVisibleButton = true; break;
+      }
+    }
+    if (!hasVisibleButton) res.push(b);
+  }
+  return res;
+}
+
+// Select/Itens: conta 1 Tap por item
+function detectSelectItemTaps(frame) {
+  var items = [];
+  var scopes = []; // containers onde os itens foram contabilizados (para evitar duplo-contar botões dentro)
+
+  // 1) Grupos "itens"
+  var itemGroups = frame.findAll(function (n) { return !!n.name && /\bitens\b/i.test(n.name); }) || [];
+  for (var g = 0; g < itemGroups.length; g++) {
+    var grp = itemGroups[g];
+    if (!isNodeVisibleInFrame(grp, frame)) continue;
+    if (isInsideStatusBar(grp, frame)) continue;
+    if (!('children' in grp) || !grp.children) continue;
+
+    var local = 0;
+    for (var c = 0; c < grp.children.length; c++) {
+      var child = grp.children[c];
+      if (!isNodeVisibleInFrame(child, frame)) continue;
+      items.push(child);
+      local++;
+    }
+    if (local > 0) scopes.push(grp);
+  }
+
+  // 2) Containers com "select" no nome (se não tinham "itens" explícito)
+  var selects = frame.findAll(function (n) { return !!n.name && /select/i.test(n.name); }) || [];
+  for (var s = 0; s < selects.length; s++) {
+    var sel = selects[s];
+    if (!isNodeVisibleInFrame(sel, frame)) continue;
+    if (isInsideStatusBar(sel, frame)) continue;
+
+    // Se já pegamos os "itens" dentro dele, pula
+    var covered = false;
+    for (var sc = 0; sc < scopes.length; sc++) { if (isDescendantOf(scopes[sc], sel)) { covered = true; break; } }
+    if (covered) continue;
+
+    if (!('children' in sel) || !sel.children) continue;
+    var localCount = 0;
+    for (var c2 = 0; c2 < sel.children.length; c2++) {
+      var ch = sel.children[c2];
+      if (!isNodeVisibleInFrame(ch, frame)) continue;
+      // Evita pegar elementos óbvios de fundo
+      var nm = String(ch.name || '').toLowerCase();
+      if (/background|bg|divider|separator/.test(nm)) continue;
+      items.push(ch);
+      localCount++;
+    }
+    if (localCount > 0) scopes.push(sel);
+  }
+
+  return { items: items, scopes: scopes };
+}
+function detectParallelItemTaps(frame) {
+  var resultItems = [];
+  var scopes = [];
+
+  // Procura qualquer node com children
+  var containers = frame.findAll(function (n) {
+    return ('children' in n) && n.children && n.children.length > 0;
+  }) || [];
+
+  for (var i = 0; i < containers.length; i++) {
+    var parent = containers[i];
+    if (!isNodeVisibleInFrame(parent, frame)) continue;
+    if (isInsideStatusBar(parent, frame)) continue;
+
+    // Filhos cujo nome contém "item"
+    var candidates = [];
+    for (var c = 0; c < parent.children.length; c++) {
+      var ch = parent.children[c];
+      var nm = String(ch.name || '');
+      if (!/item/i.test(nm)) continue;
+      if (!isNodeVisibleInFrame(ch, frame)) continue;
+      if (isInsideStatusBar(ch, frame)) continue;
+
+      // Só conta se NÃO tiver botão interno
+      if (containsVisibleButton(ch, frame)) continue;
+
+      candidates.push(ch);
+    }
+
+    // Só conta se tiver pelo menos 2 "items" em paralelo no mesmo grupo
+    if (candidates.length >= 2) {
+      for (var x = 0; x < candidates.length; x++) resultItems.push(candidates[x]);
+      scopes.push(parent); // escopo para evitar duplo-contar botões dentro desses itens
+    }
+  }
+
+  // Ordena por Y, só para uma saída consistente
+  resultItems.sort(function (a, b) {
+    var ay = ('y' in a ? a.y : 1e12), by = ('y' in b ? b.y : 1e12);
+    return ay - by;
+  });
+
+  return { items: resultItems, scopes: scopes };
+}
 
 /* =====================
  * Detecção de labels
@@ -530,150 +728,243 @@ function detectInputLabels(frame) {
   return dedup;
 }
 
+function containsVisibleButton(node, frame) {
+  if (!canFindAll(node)) return false;
+  var btns = node.findAll(function (n) { return !!n.name && nameLooksLikeButton(n.name); }) || [];
+  for (var i = 0; i < btns.length; i++) {
+    if (!isNodeVisibleInFrame(btns[i], frame)) continue;
+    if (isInsideStatusBar(btns[i], frame)) continue;
+    if (isInsideKeyboard(btns[i], frame)) continue; // <<< NOVO
+    return true;
+  }
+  return false;
+}
+
+function detectParallelItemTaps(frame) {
+  var resultItems = [];
+  var scopes = [];
+
+  var containers = frame.findAll(function (n) {
+    return ('children' in n) && n.children && n.children.length > 0;
+  }) || [];
+
+  for (var i = 0; i < containers.length; i++) {
+    var parent = containers[i];
+    if (!isNodeVisibleInFrame(parent, frame)) continue;
+    if (isInsideStatusBar(parent, frame)) continue;
+    if (isInsideKeyboard(parent, frame)) continue; // <<< NOVO
+
+    var candidates = [];
+    for (var c = 0; c < parent.children.length; c++) {
+      var ch = parent.children[c];
+      var nm = String(ch.name || '');
+      if (!/item/i.test(nm)) continue;
+      if (!isNodeVisibleInFrame(ch, frame)) continue;
+      if (isInsideStatusBar(ch, frame)) continue;
+      if (isInsideKeyboard(ch, frame)) continue; // <<< NOVO
+      if (containsVisibleButton(ch, frame)) continue;
+
+      candidates.push(ch);
+    }
+
+    if (candidates.length >= 2) {
+      for (var x = 0; x < candidates.length; x++) resultItems.push(candidates[x]);
+      scopes.push(parent);
+    }
+  }
+
+  resultItems.sort(function (a, b) {
+    var ay = ('y' in a ? a.y : 1e12), by = ('y' in b ? b.y : 1e12);
+    return ay - by;
+  });
+
+  return { items: resultItems, scopes: scopes };
+}
+
 /* =====================
  * Análise + anotação
  * ===================== */
 async function generateAnalysisAutoFromSelection() {
-  await figma.loadFontAsync({ family: 'Inter', style: 'Regular' });
-  await figma.loadFontAsync({ family: 'Inter', style: 'Bold' });
+  // Loading persistente (cancelado manualmente no finally)
+  var loadingNotify = null;
+  try {
+    // Antes de começar
+    figma.ui.postMessage({ type: 'loading', state: 'start' });
 
-  var frames = figma.currentPage.selection.filter(function (n) { return n.type === 'FRAME'; });
-  if (!frames.length) {
-    figma.notify('Selecione pelo menos uma tela (Frame).');
-    return;
-  }
+    // ... no finally, independente de sucesso/erro:
+    figma.ui.postMessage({ type: 'loading', state: 'done' });
+    loadingNotify = figma.notify('Analisando…', { timeout: 60000 });
 
-  for (var i = 0; i < frames.length; i++) {
-    var frame = frames[i];
+    await figma.loadFontAsync({ family: 'Inter', style: 'Regular' });
+    await figma.loadFontAsync({ family: 'Inter', style: 'Bold' });
 
-    // Inputs + Labels
-    var inputs = findInputsAndLabels(frame);
+    var frames = figma.currentPage.selection.filter(function (n) { return n.type === 'FRAME'; });
+    if (!frames.length) {
+      figma.notify('Selecione pelo menos uma tela (Frame).');
+      if (loadingNotify && loadingNotify.cancel) loadingNotify.cancel();
+      return;
+    }
 
-    // Keystroke fields (com máscara numérica se houver)
-    var fields = buildKeystrokeFields(frame, inputs);
+    for (var i = 0; i < frames.length; i++) {
+      var frame = frames[i];
 
-    // Counts base
-    var counts = { Tap: 0, Swipe: 0, Drag: 0, Homing: 0, Pinch: 0, Zoom: 0, MentalAct: 0 };
+      // Inputs + Labels
+      var inputs = findInputsAndLabels(frame);
 
-    // Tap por buttons (folhas visíveis)
-    var tapNodes = detectTapButtons(frame);
-    counts.Tap = tapNodes.length;
+      // Keystroke fields (com máscara numérica se houver)
+      var fields = buildKeystrokeFields(frame, inputs);
 
-    var extraKeystrokes = 0;
-    var distractionKey = 'none';
-    var D = DISTRACTION[distractionKey];
-
-    // Reading: exclui conteúdo de inputs, lê labels
-    var exclude = {};
-    for (var c = 0; c < inputs.length; c++) {
-      var contNodes = inputs[c].contentNodes || [];
-      for (var h = 0; h < contNodes.length; h++) {
-        if (contNodes[h] && contNodes[h].id) exclude[contNodes[h].id] = true;
+      // Excluir conteúdos de inputs no Reading
+      var exclude = {};
+      for (var c = 0; c < inputs.length; c++) {
+        var contNodes = inputs[c].contentNodes || [];
+        for (var h = 0; h < contNodes.length; h++) {
+          if (contNodes[h] && contNodes[h].id) exclude[contNodes[h].id] = true;
+        }
       }
+
+      // Reading
+      var readingBD = buildReadingBreakdown(frame, exclude); // { items, total }
+
+      // Tap: buttons-folha (já ignora status-bar e o back do header)
+      var buttonLeaves = detectTapButtons(frame);
+
+      // Tap: banners (1 tap se sem botões dentro)
+      var bannerNodes = detectBannerTaps(frame);
+
+      // Tap: itens "em paralelo" (irmãos com 'item' no nome, sem botão interno)
+      var parallel = detectParallelItemTaps(frame); // { items, scopes }
+      var selectItems = parallel.items || [];
+      var itemScopes = parallel.scopes || [];
+
+      // Evita duplo-contar: remove botões que estejam dentro dos escopos dos itens
+      var buttonLeavesFiltered = [];
+      for (var b = 0; b < buttonLeaves.length; b++) {
+        var leaf = buttonLeaves[b];
+        var inside = false;
+        for (var s = 0; s < itemScopes.length; s++) {
+          if (isDescendantOf(leaf, itemScopes[s])) { inside = true; break; }
+        }
+        if (!inside) buttonLeavesFiltered.push(leaf);
+      }
+
+      // Monta subitens de Tap: buttons, banners, itens
+      var tapSubs = [];
+      for (var tni = 0; tni < buttonLeavesFiltered.length; tni++) {
+        tapSubs.push({ label: buttonLeavesFiltered[tni].name, seconds: round2(TIME.Tap) });
+      }
+      for (var bn = 0; bn < bannerNodes.length; bn++) {
+        tapSubs.push({ label: bannerNodes[bn].name || 'Banner', seconds: round2(TIME.Tap) });
+      }
+      for (var si = 0; si < selectItems.length; si++) {
+        tapSubs.push({ label: selectItems[si].name || 'Item', seconds: round2(TIME.Tap) });
+      }
+
+      // Totais
+      var counts = { Tap: tapSubs.length, Swipe: 0, Drag: 0, Homing: 0, Pinch: 0, Zoom: 0, MentalAct: 0 };
+      var extraKeystrokes = 0;
+      var distractionKey = 'none';
+      var D = DISTRACTION[distractionKey];
+
+      // Keystrokes
+      var keystrokesDetected = 0;
+      for (var f = 0; f < fields.length; f++) keystrokesDetected += (fields[f].count || 0);
+      var keystrokesTotal = keystrokesDetected + extraKeystrokes;
+
+      var tRaw = {
+        Keystroke: keystrokesTotal * TIME.Keystroke,
+        Reading: readingBD.total,
+        Homing: counts.Homing * TIME.Homing,
+        MentalAct: counts.MentalAct * TIME.MentalAct,
+        Pinch: counts.Pinch * TIME.Pinch,
+        Zoom: counts.Zoom * TIME.Zoom,
+        Tap: counts.Tap * TIME.Tap,
+        Swipe: counts.Swipe * TIME.Swipe,
+        Drag: counts.Drag * TIME.Drag,
+        Gesture: 0, InitialAct: 0, Tilt: 0, Rotate: 0,
+        Response: 0
+      };
+
+      var operatorsSum =
+        tRaw.Keystroke + tRaw.Reading + tRaw.Homing + tRaw.MentalAct + tRaw.Pinch + tRaw.Zoom + tRaw.Tap + tRaw.Swipe + tRaw.Drag
+        + tRaw.Gesture + tRaw.InitialAct + tRaw.Tilt + tRaw.Rotate;
+
+      var inflated = operatorsSum * D;
+      var distractionAdded = inflated - operatorsSum;
+      var total = inflated + tRaw.Response;
+
+      // Subitens arredondados
+      var ksSubs = [];
+      for (var s2 = 0; s2 < fields.length; s2++) {
+        var sec = round2(fields[s2].count * TIME.Keystroke);
+        if (sec > 0) ksSubs.push({ label: fields[s2].containerName + ' (' + fields[s2].count + ')', seconds: sec });
+      }
+
+      var readSubs = [];
+      var itms = readingBD.items || [];
+      for (var ri = 0; ri < itms.length; ri++) {
+        readSubs.push({ label: itms[ri].label, seconds: round2(itms[ri].seconds) });
+      }
+
+      var saveCfg = { distraction: distractionKey, responses: [], counts: counts, fields: fields, extraKeystrokes: extraKeystrokes };
+      frame.setPluginData(PLUGIN_KEY, JSON.stringify(saveCfg));
+
+      // Linhas (arredondadas)
+      var t = {
+        Keystroke: round2(tRaw.Keystroke),
+        Reading: round2(tRaw.Reading),
+        Homing: round2(tRaw.Homing),
+        MentalAct: round2(tRaw.MentalAct),
+        Pinch: round2(tRaw.Pinch),
+        Zoom: round2(tRaw.Zoom),
+        Tap: round2(tRaw.Tap),
+        Swipe: round2(tRaw.Swipe),
+        Drag: round2(tRaw.Drag),
+        Gesture: 0, InitialAct: 0, Tilt: 0, Rotate: 0,
+        Response: round2(tRaw.Response)
+      };
+
+      var distractionRounded = round2(distractionAdded);
+      var totalRounded = round2(total);
+
+      var items = [];
+      if (t.Keystroke > 0) items.push(['Keystroke', t.Keystroke]);
+      if (t.Reading > 0) items.push(['Reading', t.Reading]);
+      if (t.Homing > 0) items.push(['Homing', t.Homing]);
+      if (t.MentalAct > 0) items.push(['Mental Act', t.MentalAct]);
+      if (t.Response > 0) items.push(['Response', t.Response]);
+      if (distractionRounded > 0) items.push(['Distraction', distractionRounded, D]);
+      if (t.Gesture > 0) items.push(['Gesture', t.Gesture]);
+      if (t.Pinch > 0) items.push(['Pinch', t.Pinch]);
+      if (t.Zoom > 0) items.push(['Zoom', t.Zoom]);
+      if (t.InitialAct > 0) items.push(['Inicial act', t.InitialAct]);
+      if (t.Tap > 0) items.push(['Tap', t.Tap]);
+      if (t.Swipe > 0) items.push(['Swipe', t.Swipe]);
+      if (t.Tilt > 0) items.push(['Tilt', t.Tilt]);
+      if (t.Rotate > 0) items.push(['Rotate', t.Rotate]);
+      if (t.Drag > 0) items.push(['Drag', t.Drag]);
+
+      var breakdown = {
+        Keystroke: ksSubs,
+        Tap: tapSubs,
+        Reading: readSubs
+      };
+
+      await upsertAnnotation(frame, {
+        total: totalRounded,
+        items: items,
+        breakdown: breakdown
+      });
     }
-    var readingBD = buildReadingBreakdown(frame, exclude); // { items, total }
 
-    // Cálculo
-    var keystrokesDetected = 0;
-    for (var f = 0; f < fields.length; f++) keystrokesDetected += (fields[f].count || 0);
-    var keystrokesTotal = keystrokesDetected + extraKeystrokes;
-
-    var tRaw = {
-      Keystroke: keystrokesTotal * TIME.Keystroke,
-      Reading: readingBD.total,
-      Homing: counts.Homing * TIME.Homing,
-      MentalAct: counts.MentalAct * TIME.MentalAct,
-      Pinch: counts.Pinch * TIME.Pinch,
-      Zoom: counts.Zoom * TIME.Zoom,
-      Tap: counts.Tap * TIME.Tap,
-      Swipe: counts.Swipe * TIME.Swipe,
-      Drag: counts.Drag * TIME.Drag,
-      Gesture: 0, InitialAct: 0, Tilt: 0, Rotate: 0,
-      Response: 0
-    };
-
-    var operatorsSum =
-      tRaw.Keystroke + tRaw.Reading + tRaw.Homing + tRaw.MentalAct + tRaw.Pinch + tRaw.Zoom + tRaw.Tap + tRaw.Swipe + tRaw.Drag
-      + tRaw.Gesture + tRaw.InitialAct + tRaw.Tilt + tRaw.Rotate;
-
-    var inflated = operatorsSum * D;
-    var distractionAdded = inflated - operatorsSum;
-    var total = inflated + tRaw.Response;
-
-    // Subitens (arredondados)
-    var ksSubs = [];
-    for (var s = 0; s < fields.length; s++) {
-      var subSec = round2(fields[s].count * TIME.Keystroke);
-      if (subSec > 0) ksSubs.push({ label: fields[s].containerName + ' (' + fields[s].count + ')', seconds: subSec });
-    }
-
-    var tapSubs = [];
-    for (var tni = 0; tni < tapNodes.length; tni++) {
-      tapSubs.push({ label: tapNodes[tni].name, seconds: round2(TIME.Tap) });
-    }
-
-    var readSubs = [];
-    var itms = readingBD.items || [];
-    for (var ri = 0; ri < itms.length; ri++) {
-      readSubs.push({ label: itms[ri].label, seconds: round2(itms[ri].seconds) });
-    }
-
-    // Persistência mínima
-    var saveCfg = { distraction: distractionKey, responses: [], counts: counts, fields: fields, extraKeystrokes: extraKeystrokes };
-    frame.setPluginData(PLUGIN_KEY, JSON.stringify(saveCfg));
-
-    // Linhas (arredondadas)
-    var t = {
-      Keystroke: round2(tRaw.Keystroke),
-      Reading: round2(tRaw.Reading),
-      Homing: round2(tRaw.Homing),
-      MentalAct: round2(tRaw.MentalAct),
-      Pinch: round2(tRaw.Pinch),
-      Zoom: round2(tRaw.Zoom),
-      Tap: round2(tRaw.Tap),
-      Swipe: round2(tRaw.Swipe),
-      Drag: round2(tRaw.Drag),
-      Gesture: 0,
-      InitialAct: 0,
-      Tilt: 0,
-      Rotate: 0,
-      Response: round2(tRaw.Response)
-    };
-
-    var distractionRounded = round2(distractionAdded);
-    var totalRounded = round2(total);
-
-    var items = [];
-    if (t.Keystroke > 0) items.push(['Keystroke', t.Keystroke]);
-    if (t.Reading > 0) items.push(['Reading', t.Reading]);
-    if (t.Homing > 0) items.push(['Homing', t.Homing]);
-    if (t.MentalAct > 0) items.push(['Mental Act', t.MentalAct]);
-    if (t.Response > 0) items.push(['Response', t.Response]);
-    if (distractionRounded > 0) items.push(['Distraction', distractionRounded, D]);
-    if (t.Gesture > 0) items.push(['Gesture', t.Gesture]);
-    if (t.Pinch > 0) items.push(['Pinch', t.Pinch]);
-    if (t.Zoom > 0) items.push(['Zoom', t.Zoom]);
-    if (t.InitialAct > 0) items.push(['Inicial act', t.InitialAct]);
-    if (t.Tap > 0) items.push(['Tap', t.Tap]);
-    if (t.Swipe > 0) items.push(['Swipe', t.Swipe]);
-    if (t.Tilt > 0) items.push(['Tilt', t.Tilt]);
-    if (t.Rotate > 0) items.push(['Rotate', t.Rotate]);
-    if (t.Drag > 0) items.push(['Drag', t.Drag]);
-
-    var breakdown = {
-      Keystroke: ksSubs,
-      Tap: tapSubs,
-      Reading: readSubs
-    };
-
-    await upsertAnnotation(frame, {
-      total: totalRounded,
-      items: items,
-      breakdown: breakdown
-    });
+    // Sucesso
+    if (loadingNotify && loadingNotify.cancel) loadingNotify.cancel();
+    figma.notify('Análises geradas!');
+  } catch (e) {
+    if (loadingNotify && loadingNotify.cancel) loadingNotify.cancel();
+    figma.notify('Erro ao analisar: ' + (e && e.message ? e.message : String(e)));
+    console.error(e);
   }
-
-  figma.notify('Análises geradas!');
 }
 
 
@@ -684,40 +975,49 @@ async function upsertAnnotation(ownerFrame, result) {
   });
   for (var i = 0; i < old.length; i++) { try { old[i].remove(); } catch (e) { } }
 
+  // --- Config ---
+  var GAP = 32; // mesmo espaçamento de antes (pode ajustar se quiser)
+
   // Container visual
   var box = figma.createFrame();
   box.name = 'TLM - ' + ownerFrame.name;
   box.layoutMode = 'VERTICAL';
-  box.counterAxisSizingMode = 'AUTO';
-  box.primaryAxisSizingMode = 'AUTO';
+  box.primaryAxisSizingMode = 'AUTO';   // altura automática pelo conteúdo
+  box.counterAxisSizingMode = 'FIXED';  // largura fixa (vamos setar igual ao frame)
   box.paddingTop = 8; box.paddingBottom = 8; box.paddingLeft = 8; box.paddingRight = 8;
   box.itemSpacing = 8; box.cornerRadius = 8;
   box.strokes = [{ type: 'SOLID', color: { r: 0.90, g: 0.90, b: 0.95 } }];
   box.strokeWeight = 1;
   box.fills = [{ type: 'SOLID', color: { r: 0.96, g: 0.97, b: 0.99 } }];
 
+  // Título
   var title = figma.createText();
   title.characters = 'Interacoes';
   title.fontName = { family: 'Inter', style: 'Bold' };
   title.fontSize = 14;
   title.fills = [{ type: 'SOLID', color: { r: 0.216, g: 0.251, b: 0.306 } }];
+  // ocupar largura e quebrar quando precisar
+  title.layoutAlign = 'STRETCH';
+  if ('textAutoResize' in title) title.textAutoResize = 'HEIGHT';
 
+  // Subtitle (Total)
   var subtitle = figma.createText();
   subtitle.characters = 'Total: ' + formatSecondsComma(result.total);
   subtitle.fontName = { family: 'Inter', style: 'Bold' };
   subtitle.fontSize = 12;
   subtitle.fills = [{ type: 'SOLID', color: { r: 0.216, g: 0.251, b: 0.306 } }];
+  subtitle.layoutAlign = 'STRETCH';
+  if ('textAutoResize' in subtitle) subtitle.textAutoResize = 'HEIGHT';
 
+  // Corpo: operadores + subitens
   var body = figma.createText();
   var lines = [];
 
-  // Constrói corpo: operador (tempo) + subitens (se existirem)
   for (var a = 0; a < result.items.length; a++) {
     var label = result.items[a][0];
     var value = result.items[a][1];
     var factor = result.items[a][2];
 
-    // Pula zeros
     if (!value || value <= 0) continue;
 
     if (label === 'Distraction') {
@@ -726,12 +1026,11 @@ async function upsertAnnotation(ownerFrame, result) {
     } else {
       lines.push(label + ': ' + formatSecondsComma(value));
 
-      // Subitens deste operador (se houver)
       var subs = result.breakdown ? result.breakdown[label] : null;
       if (subs && subs.length) {
         for (var s = 0; s < subs.length; s++) {
           var sv = subs[s].seconds;
-          if (!sv || sv <= 0) continue; // oculta 0,00s
+          if (!sv || sv <= 0) continue;
           lines.push('- ' + subs[s].label + ': ' + formatSecondsComma(sv));
         }
       }
@@ -743,13 +1042,20 @@ async function upsertAnnotation(ownerFrame, result) {
   body.fontSize = 12;
   body.lineHeight = { value: 20, unit: 'PIXELS' };
   body.fills = [{ type: 'SOLID', color: { r: 0.216, g: 0.251, b: 0.306 } }];
+  body.layoutAlign = 'STRETCH';
+  if ('textAutoResize' in body) body.textAutoResize = 'HEIGHT';
 
+  // Monta node (ordem importa para auto layout)
   box.appendChild(title);
   box.appendChild(subtitle);
   box.appendChild(body);
 
-  box.x = ownerFrame.x + ownerFrame.width + 32;
-  box.y = ownerFrame.y;
+  // Define a largura igual ao frame analisado (depois de montar o conteúdo)
+  box.resize(ownerFrame.width, box.height);
+
+  // Posiciona ABAIXO do frame, com o mesmo espaçamento
+  box.x = ownerFrame.x;
+  box.y = ownerFrame.y + ownerFrame.height + GAP;
 
   figma.currentPage.appendChild(box);
   box.setPluginData(NOTE_KEY, ownerFrame.id);

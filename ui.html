@@ -3,14 +3,262 @@
 
 <head>
   <meta charset="UTF-8" />
+  <style>
+    :root {
+      --bg: #fff;
+      --text: #2f3540;
+      --muted: #6b7380;
+      --primary: #0066ff;
+      --primary-hover: #0050cc;
+      --border: #e5e8ef;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans";
+      color: var(--text);
+      background: var(--bg);
+      margin: 0;
+    }
+
+    .wrap {
+      padding: 16px;
+      max-height: 1100px;
+      overflow: auto;
+    }
+
+    /* mais espaço para a lista */
+    h1 {
+      margin: 0 0 8px;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    p {
+      margin: 0 0 16px;
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 36px;
+      padding: 0 14px;
+      border: 1px solid var(--primary);
+      border-radius: 6px;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn:disabled {
+      opacity: .7;
+      cursor: not-allowed;
+    }
+
+    .sp48 {
+      height: 48px;
+    }
+
+    h2 {
+      margin: 0 0 10px;
+      font-size: 12px;
+      font-weight: 600;
+      /* peso menor que o H1 */
+      color: var(--text);
+    }
+
+    .ops {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .op {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      /* Nome | Explicação | Valor */
+      gap: 8px;
+      align-items: baseline;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px;
+      background: #fff;
+    }
+
+    .op .name {
+      font-weight: 600;
+      font-size: 12px;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .op .desc {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .op .val {
+      font-size: 12px;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .small {
+      font-size: 12px;
+      color: var(--muted);
+    }
+  </style>
 </head>
 
 <body>
-  <button id="go">Gerar análise</button>
+  <div class="wrap">
+    <h1>Touch Level Model (TLM)</h1>
+    <p>
+      TLM é um método teórico que analisa o tempo que o usuário ficaria em tela de acordo com as interações disponíveis.
+      Para analisar, basta selecionar as telas e gerar análise.
+    </p>
+
+    <button id="analyze" class="btn">Gerar análise</button>
+
+    <div class="sp48"></div>
+
+    <h2>Operadores</h2>
+
+    <div class="ops">
+      <div class="op">
+        <div class="name">Keystroke</div>
+        <div class="desc">Digitar um caractere no teclado virtual</div>
+        <div class="val">0,28&nbsp;s</div>
+      </div>
+
+      <div class="op">
+        <div class="name">Homing</div>
+        <div class="desc">Levar o dedo de uma parte da tela a outra</div>
+        <div class="val">0,34&nbsp;s</div>
+      </div>
+
+      <div class="op">
+        <div class="name">Mental Act</div>
+        <div class="desc">Tempo de preparação mental para realizar outro gesto</div>
+        <div class="val">1,35&nbsp;s</div>
+      </div>
+
+      <div class="op">
+        <div class="name">Response</div>
+        <div class="desc">Tempo de resposta das APIs (informado manualmente; padrão 0,00&nbsp;s)</div>
+        <div class="val">—</div>
+      </div>
+
+      <div class="op">
+        <div class="name">Distraction</div>
+        <div class="desc">Multiplicador aplicado aos operadores (não aplica em Response)</div>
+        <div class="val">Baixa +6% (×1,06); Média +14% (×1,14); Alta +21% (×1,21)</div>
+      </div>
+
+      <div class="op">
+        <div class="name">Gesture</div>
+        <div class="desc">Movimentos especiais com os dedos (não usado no momento)</div>
+        <div class="val">0,00&nbsp;s</div>
+      </div>
+
+      <div class="op">
+        <div class="name">Pinch</div>
+        <div class="desc">Deslizar dois dedos juntando</div>
+        <div class="val">0,36&nbsp;s</div>
+      </div>
+
+      <div class="op">
+        <div class="name">Zoom</div>
+        <div class="desc">Deslizar dois dedos afastando</div>
+        <div class="val">0,36&nbsp;s</div>
+      </div>
+
+      <div class="op">
+        <div class="name">Initial act</div>
+        <div class="desc">Abrir a aplicação (não usado no momento)</div>
+        <div class="val">0,00&nbsp;s</div>
+      </div>
+
+      <div class="op">
+        <div class="name">Tap</div>
+        <div class="desc">Toque na tela</div>
+        <div class="val">0,25&nbsp;s</div>
+      </div>
+
+      <div class="op">
+        <div class="name">Swipe</div>
+        <div class="desc">Deslizar o dedo pela tela (swipe/scroll)</div>
+        <div class="val">0,42&nbsp;s</div>
+      </div>
+
+      <div class="op">
+        <div class="name">Tilt</div>
+        <div class="desc">Rotacionar o smartphone (não usado no momento)</div>
+        <div class="val">0,00&nbsp;s</div>
+      </div>
+
+      <div class="op">
+        <div class="name">Rotate</div>
+        <div class="desc">Rotacionar a tela com os dedos (não usado no momento)</div>
+        <div class="val">0,00&nbsp;s</div>
+      </div>
+
+      <div class="op">
+        <div class="name">Drag</div>
+        <div class="desc">Arrastar o dedo sem perder contato</div>
+        <div class="val">0,44&nbsp;s</div>
+      </div>
+
+      <div class="op">
+        <div class="name">Reading</div>
+        <div class="desc">Leitura: 0,30&nbsp;s por palavra; até 3 palavras lê 100%; acima de 3, lê 28%</div>
+        <div class="val">—</div>
+      </div>
+    </div>
+
+    <p class="small" style="margin-top:12px">
+      Observações: Resultados arredondados para 2 casas decimais.
+    </p>
+  </div>
+
   <script>
-    document.getElementById('go').onclick = function () {
-      parent.postMessage({ pluginMessage: { type: 'ping' } }, '*');
-    };
+    (function () {
+      var btn = document.getElementById('analyze');
+      if (!btn) return;
+
+      btn.onclick = function () {
+        btn.disabled = true;
+        btn.textContent = 'Analisando…';
+        parent.postMessage({ pluginMessage: { type: 'ping' } }, '*'); // dispara a análise
+      };
+
+      // receber estado de loading do main (code.js)
+      window.onmessage = function (event) {
+        var msg = event.data && event.data.pluginMessage;
+        if (!msg) return;
+        if (msg.type === 'loading') {
+          if (msg.state === 'start') {
+            btn.disabled = true;
+            btn.textContent = 'Analisando…';
+          } else if (msg.state === 'done') {
+            btn.disabled = false;
+            btn.textContent = 'Gerar análise';
+          }
+        }
+      };
+    })();
   </script>
 </body>
 
