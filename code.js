@@ -84,6 +84,7 @@ const TAP_NAME_PATTERNS = [
   /\bcta\b/i,
   /tap/i,
   /banner/i,
+  /card/i,
   /toast/i,
   /snackbar/i,
   /pill/i,
@@ -842,33 +843,44 @@ function buildKeystrokeFields(frame, inputs) {
       placeholder = digitavel.characters.trim();
     }
 
-    // Tenta identificar pelo label, placeholder ou nome do container
-    let norm = normalizeLabel(labelRaw || placeholder || input.container.name || '');
+    // CORREÇÃO: Priorizar identificação por contexto antes do placeholder
+    let norm = normalizeLabel(labelRaw || input.container.name || '');
     let matched = null;
+    
+    // Primeiro tenta identificar pelo label
     for (const guess of FIELD_GUESSES) {
       if (guess.test(norm)) {
         matched = guess;
         break;
       }
     }
+    
+    // Se não encontrou no label, tenta no placeholder
+    if (!matched && placeholder) {
+      let placeholderNorm = normalizeLabel(placeholder);
+      for (const guess of FIELD_GUESSES) {
+        if (guess.test(placeholderNorm)) {
+          matched = guess;
+          break;
+        }
+      }
+    }
+
     if (matched) {
       tipo = matched.canonical;
       // Se for campo numérico, conte apenas dígitos se já estiver preenchido, senão use padrão
-      if (matched.onlyDigits && digitavel.characters) {
+      if (matched.onlyDigits && digitavel.characters && digitavel.characters !== placeholder) {
         const digits = countDigits(digitavel.characters);
         count = digits > 0 ? digits : matched.count;
       } else {
         count = matched.count;
       }
-    } else if (placeholder) {
-      // Se tem placeholder, usa o tamanho dele como count
-      count = placeholder.length;
-      tipo = placeholder;
-    } else if (digitavel.characters) {
-      // Se já está preenchido, usa o tamanho do preenchido
+    } else if (digitavel.characters && digitavel.characters !== placeholder) {
+      // Se já está preenchido e não é placeholder, usa o tamanho do preenchido
       count = digitavel.characters.length;
       tipo = labelRaw || input.container.name || 'Campo';
     } else {
+      // Último recurso: usa valor padrão
       tipo = labelRaw || input.container.name || 'Campo';
     }
 
@@ -878,7 +890,7 @@ function buildKeystrokeFields(frame, inputs) {
     fields.push({
       label: tipo,
       count: count,
-      containerName: reportLabel // <--- agora vai o label no relatório
+      containerName: reportLabel
     });
   }
   return fields;
