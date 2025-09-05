@@ -29,10 +29,47 @@ const AUTO_TAP_PER_FIELD = true;
 
 const FIELD_GUESSES = [
   { test: s => /\bemail\b/.test(s), canonical: 'E-mail', count: 25 },
-  { test: s => /\b(senha|password)\b/.test(s), canonical: 'Senha', count: 6 },
+  { test: s => /\b(senha|password|pass|pwd)\b/.test(s), canonical: 'Senha', count: 6 },
   { test: s => /\bnome\b/.test(s), canonical: 'Nome', count: 12 },
-  { test: s => /\bcpf\b/.test(s), canonical: 'CPF', count: 11 },
-  { test: s => /\bcep\b/.test(s), canonical: 'CEP', count: 8 }
+  { test: s => /\bsobrenome\b/.test(s), canonical: 'Sobrenome', count: 15 },
+  { test: s => /\bcpf\b/.test(s), canonical: 'CPF', count: 11, onlyDigits: true },
+  { test: s => /\brg\b/.test(s), canonical: 'RG', count: 9, onlyDigits: true },
+  { test: s => /\bcnpj\b/.test(s), canonical: 'CNPJ', count: 14, onlyDigits: true },
+  { test: s => /\bcep\b/.test(s), canonical: 'CEP', count: 8, onlyDigits: true },
+  { test: s => /\btelefone\b/.test(s), canonical: 'Telefone', count: 11, onlyDigits: true },
+  { test: s => /\bcelular\b/.test(s), canonical: 'Celular', count: 11, onlyDigits: true },
+  { test: s => /\bdata\b/.test(s), canonical: 'Data', count: 8 },
+  { test: s => /\bnascimento\b/.test(s), canonical: 'Data de Nascimento', count: 8 },
+  { test: s => /\bendere[cç]o\b/.test(s), canonical: 'Endereço', count: 30 },
+  { test: s => /\bbairro\b/.test(s), canonical: 'Bairro', count: 20 },
+  { test: s => /\bcidade\b/.test(s), canonical: 'Cidade', count: 20 },
+  { test: s => /\bestado\b/.test(s), canonical: 'Estado', count: 2 },
+  { test: s => /\bnumero\b/.test(s), canonical: 'Número', count: 5 },
+  { test: s => /\bcomplemento\b/.test(s), canonical: 'Complemento', count: 20 },
+  { test: s => /\bpais\b/.test(s), canonical: 'País', count: 20 },
+  { test: s => /\bprofiss[aã]o\b/.test(s), canonical: 'Profissão', count: 20 },
+  { test: s => /\brenda\b/.test(s), canonical: 'Renda', count: 10 },
+  { test: s => /\bempresa\b/.test(s), canonical: 'Empresa', count: 30 },
+  { test: s => /\bmatr[ií]cula\b/.test(s), canonical: 'Matrícula', count: 10 },
+  { test: s => /\bplaca\b/.test(s), canonical: 'Placa', count: 7 },
+  { test: s => /\bcart[aã]o\b/.test(s), canonical: 'Cartão', count: 16 },
+  { test: s => /\bconta\b/.test(s), canonical: 'Conta', count: 10 },
+  { test: s => /\bag[êe]ncia\b/.test(s), canonical: 'Agência', count: 4 },
+  { test: s => /\bchave\b/.test(s), canonical: 'Chave', count: 15 },
+  { test: s => /\btoken\b/.test(s), canonical: 'Token', count: 8 },
+  { test: s => /\bpis\b/.test(s), canonical: 'PIS', count: 11, onlyDigits: true },
+  { test: s => /\btitulo\b/.test(s), canonical: 'Título', count: 12 },
+  { test: s => /\bserie\b/.test(s), canonical: 'Série', count: 6 },
+  { test: s => /\bnacionalidade\b/.test(s), canonical: 'Nacionalidade', count: 20 },
+  { test: s => /\bnaturalidade\b/.test(s), canonical: 'Naturalidade', count: 20 },
+  { test: s => /\buser(name)?\b/.test(s), canonical: 'Usuário', count: 15 },
+  { test: s => /\blogin\b/.test(s), canonical: 'Login', count: 15 },
+  { test: s => /\bvalor\b/.test(s), canonical: 'Valor', count: 10 },
+  { test: s => /\bmensagem\b/.test(s), canonical: 'Mensagem', count: 100 },
+  { test: s => /\bcoment[aá]rio\b/.test(s), canonical: 'Comentário', count: 100 },
+  { test: s => /\bdescricao\b/.test(s), canonical: 'Descrição', count: 100 },
+  { test: s => /\bdescription\b/.test(s), canonical: 'Descrição', count: 100 },
+  { test: s => /\bobs(erv[aã]o)?\b/.test(s), canonical: 'Observação', count: 30 }
 ];
 
 /**
@@ -40,128 +77,214 @@ const FIELD_GUESSES = [
  * 
  * Lista centralizada de padrões de nomes para identificar elementos clicáveis (tap).
  * Para adicionar um novo termo, basta incluir um novo regex aqui.
- * 
- * Exemplos:
- * - Botões: button, btn, cta, action, primary, secondary, etc.
- * - Banners: banner, toast, snackbar, etc.
- * - Ações comuns: salvar, enviar, concluir, cancelar, etc.
- * - Termos em português e inglês.
  */
 const TAP_NAME_PATTERNS = [
-  /button/i,           // button
-  /\bbtn\b/i,          // btn
-  /\bcta\b/i,          // cta
-  /tap/i,              // tap
-  /banner/i,           // banner
-  /toast/i,            // toast
-  /snackbar/i,         // snackbar
-  /pill/i,             // pill
-  /chip/i,             // chip
-  /fab\b/i,            // Floating Action Button
-  /action/i,           // action
-  /primary/i,          // primary
-  /secondary/i,        // secondary
-  /tertiary/i,         // tertiary
-  /close\b/i,          // close
-  /dismiss\b/i,        // dismiss
-  /ok\b/i,             // ok
-  /confirm\b/i,        // confirm
-  /cancel\b/i,         // cancel
-  /continue\b/i,       // continue
-  /next\b/i,           // next
-  /previous\b/i,       // previous
-  /back\b/i,           // back
-  /voltar\b/i,         // voltar
-  /avançar\b/i,        // avançar
-  /concluir\b/i,       // concluir
-  /finalizar\b/i,      // finalizar
-  /enviar\b/i,         // enviar
-  /submit\b/i,         // submit
-  /salvar\b/i,         // salvar
-  /save\b/i,           // save
-  /remover\b/i,        // remover
-  /delete\b/i,         // delete
-  /excluir\b/i,        // excluir
-  /editar\b/i,         // editar
-  /edit\b/i,           // edit
-  /adicionar\b/i,      // adicionar
-  /add\b/i,            // add
-  /mais\b/i,           // mais
-  /menos\b/i,          // menos
-  /item\b/i,           // item
-  /itens\b/i,          // itens
-  /select\b/i,         // select
-  /selecionar\b/i,     // selecionar
-  /opção\b/i,          // opção
-  /option\b/i,         // option
-  /abrir\b/i,          // abrir
-  /abrir conta\b/i,    // abrir conta
-  /entrar\b/i,         // entrar
-  /login\b/i,          // login
-  /logout\b/i,         // logout
-  /sair\b/i,           // sair
-  /acessar\b/i,        // acessar
-  /detalhes\b/i,       // detalhes
-  /detalhe\b/i,        // detalhe
-  /ver mais\b/i,       // ver mais
-  /vermenos\b/i,       // vermenos
-  /ver\b/i,            // ver
-  /ir\b/i,             // ir
-  /comprar\b/i,        // comprar
-  /pagar\b/i,          // pagar
-  /assinar\b/i,        // assinar
-  /continuar\b/i,      // continuar
-  /prosseguir\b/i,     // prosseguir
-  /iniciar\b/i,        // iniciar
-  /começar\b/i,        // começar
-  /start\b/i,          // start
-  /stop\b/i,           // stop
-  /pausar\b/i,         // pausar
-  /play\b/i,           // play
-  /pause\b/i,          // pause
-  /aceitar\b/i,        // aceitar
-  /recusar\b/i,        // recusar
-  /recuperar\b/i,      // recuperar
-  /esqueci\b/i,        // esqueci
-  /senha\b/i,          // senha
-  /nova senha\b/i,     // nova senha
-  /confirmar\b/i,      // confirmar
-  /sim\b/i,            // sim
-  /não\b/i,            // não
-  /yes\b/i,            // yes
-  /no\b/i,             // no
-  /done\b/i,           // done
-  /ready\b/i,          // ready
-  /go\b/i,             // go
-  /send\b/i,           // send
-  /share\b/i,          // share
-  /compartilhar\b/i,   // compartilhar
-  /download\b/i,       // download
-  /baixar\b/i,         // baixar
-  /upload\b/i,         // upload
-  /carregar\b/i,       // carregar
-  /filtrar\b/i,        // filtrar
-  /filter\b/i,         // filter
-  /aplicar\b/i,        // aplicar
-  /apply\b/i,          // apply
-  /limpar\b/i,         // limpar
-  /clear\b/i,          // clear
-  /buscar\b/i,         // buscar
-  /search\b/i,         // search
-  /pesquisar\b/i,      // pesquisar
-  /favoritar\b/i,      // favoritar
-  /favorito\b/i,       // favorito
-  /like\b/i,           // like
-  /curtir\b/i,         // curtir
-  /descurtir\b/i,      // descurtir
-  /dislike\b/i,        // dislike
-  /seguir\b/i,         // seguir
-  /follow\b/i,         // follow
-  /unfollow\b/i,       // unfollow
-  /compra\b/i,         // compra
-  /cart\b/i,           // cart
-  /carrinho\b/i,       // carrinho
-  /checkout\b/i        // checkout
+  /button/i,
+  /\bbtn\b/i,
+  /\bcta\b/i,
+  /tap/i,
+  /banner/i,
+  /toast/i,
+  /snackbar/i,
+  /pill/i,
+  /chip/i,
+  /fab\b/i,
+  /action/i,
+  /primary/i,
+  /secondary/i,
+  /tertiary/i,
+  /close\b/i,
+  /dismiss\b/i,
+  /ok\b/i,
+  /confirm\b/i,
+  /cancel\b/i,
+  /continue\b/i,
+  /next\b/i,
+  /previous\b/i,
+  /back\b/i,
+  /voltar\b/i,
+  /avançar\b/i,
+  /concluir\b/i,
+  /finalizar\b/i,
+  /enviar\b/i,
+  /submit\b/i,
+  /salvar\b/i,
+  /save\b/i,
+  /remover\b/i,
+  /delete\b/i,
+  /excluir\b/i,
+  /editar\b/i,
+  /edit\b/i,
+  /adicionar\b/i,
+  /add\b/i,
+  /mais\b/i,
+  /menos\b/i,
+  /item\b/i,
+  /itens\b/i,
+  /select\b/i,
+  /selecionar\b/i,
+  /opção\b/i,
+  /option\b/i,
+  /abrir\b/i,
+  /abrir conta\b/i,
+  /entrar\b/i,
+  /login\b/i,
+  /logout\b/i,
+  /sair\b/i,
+  /acessar\b/i,
+  /detalhes\b/i,
+  /detalhe\b/i,
+  /ver mais\b/i,
+  /vermenos\b/i,
+  /ver\b/i,
+  /ir\b/i,
+  /comprar\b/i,
+  /pagar\b/i,
+  /assinar\b/i,
+  /continuar\b/i,
+  /prosseguir\b/i,
+  /iniciar\b/i,
+  /começar\b/i,
+  /start\b/i,
+  /stop\b/i,
+  /pausar\b/i,
+  /play\b/i,
+  /pause\b/i,
+  /aceitar\b/i,
+  /recusar\b/i,
+  /recuperar\b/i,
+  /esqueci\b/i,
+  /senha\b/i,
+  /nova senha\b/i,
+  /confirmar\b/i,
+  /sim\b/i,
+  /não\b/i,
+  /yes\b/i,
+  /no\b/i,
+  /done\b/i,
+  /ready\b/i,
+  /go\b/i,
+  /send\b/i,
+  /share\b/i,
+  /compartilhar\b/i,
+  /download\b/i,
+  /baixar\b/i,
+  /upload\b/i,
+  /carregar\b/i,
+  /filtrar\b/i,
+  /filter\b/i,
+  /aplicar\b/i,
+  /apply\b/i,
+  /limpar\b/i,
+  /clear\b/i,
+  /buscar\b/i,
+  /search\b/i,
+  /pesquisar\b/i,
+  /favoritar\b/i,
+  /favorito\b/i,
+  /like\b/i,
+  /curtir\b/i,
+  /descurtir\b/i,
+  /dislike\b/i,
+  /seguir\b/i,
+  /follow\b/i,
+  /unfollow\b/i,
+  /compra\b/i,
+  /cart\b/i,
+  /carrinho\b/i,
+  /checkout\b/i
+  // Adicione mais padrões aqui no futuro
+];
+
+/**
+ * INPUT_NAME_PATTERNS
+ * 
+ * Lista centralizada de padrões de nomes para identificar componentes de input (campos de digitação).
+ * Para adicionar um novo termo, basta incluir um novo regex aqui.
+ * Exemplos: input, text field, campo, senha, password, search, busca, etc.
+ */
+const INPUT_NAME_PATTERNS = [
+  /input/i,
+  /text\s*field/i,
+  /textfield/i,
+  /campo/i,
+  /senha/i,
+  /password/i,
+  /search/i,
+  /busca/i,
+  /e-mail/i,
+  /email/i,
+  /cpf/i,
+  /cep/i,
+  /nome/i,
+  /telefone/i,
+  /celular/i,
+  /address/i,
+  /endereço/i,
+  /number/i,
+  /número/i,
+  /user/i,
+  /usuario/i,
+  /usuário/i,
+  /login/i,
+  /mensagem/i,
+  /message/i,
+  /comentário/i,
+  /comment/i,
+  /obs\b/i,
+  /observação/i,
+  /note/i,
+  /notas/i,
+  /data/i,
+  /date/i,
+  /form/i,
+  /formulário/i,
+  /valor/i,
+  /value/i,
+  /quantidade/i,
+  /quantity/i
+  // Adicione mais padrões aqui no futuro
+];
+
+/**
+ * LABEL_NAME_PATTERNS
+ * 
+ * Padrões para identificar labels de input (título do campo).
+ */
+const LABEL_NAME_PATTERNS = [
+  /label/i,
+  /t[ií]tulo/i,
+  /campo/i,
+  /input\s*title/i,
+  /input\s*label/i,
+  /descri[cç][aã]o/i,
+  /description/i,
+  /nome/i,
+  /field\s*name/i
+  // Adicione mais padrões aqui no futuro
+];
+
+/**
+ * HINT_NAME_PATTERNS
+ * 
+ * Padrões para identificar hints, helpers, mensagens de erro ou ajuda.
+ */
+const HINT_NAME_PATTERNS = [
+  /hint/i,
+  /ajuda/i,
+  /helper/i,
+  /help/i,
+  /erro/i,
+  /error/i,
+  /mensagem/i,
+  /message/i,
+  /dica/i,
+  /exemplo/i,
+  /placeholder/i,
+  /info/i,
+  /informativo/i,
+  /sugest[aã]o/i,
+  /suggestion/i
   // Adicione mais padrões aqui no futuro
 ];
 
@@ -360,15 +483,15 @@ function findInputsAndLabels(rootFrame) {
   var namedContainers = rootFrame.findAll(function (n) {
     var t = n.type;
     if (t === 'FRAME' || t === 'COMPONENT' || t === 'INSTANCE' || t === 'GROUP' || t === 'SECTION') {
-      return nameLooksLikeInput(n.name);
+      return isInputComponent(n);
     }
     return false;
   }) || [];
   for (var i = 0; i < namedContainers.length; i++) containers.push(namedContainers[i]);
 
-  // 2) TEXT com name "input"/"text field"/"textfield" -> ancestral com filhos vira container
+  // 2) TEXT com name de input -> ancestral com filhos vira container
   var inputTexts = rootFrame.findAll(function (n) {
-    return n.type === 'TEXT' && nameLooksLikeInput(n.name);
+    return n.type === 'TEXT' && isInputComponent(n);
   }) || [];
   for (var j = 0; j < inputTexts.length; j++) {
     var cont = nearestChildrenContainer(inputTexts[j].parent || inputTexts[j]);
@@ -533,7 +656,7 @@ async function generateAnalysisAutoFromSelection() {
       if (t.Keystroke > 0) items.push(['Keystroke', t.Keystroke]);
       if (t.Reading > 0) items.push(['Reading', t.Reading]);
       if (t.Homing > 0) items.push(['Homing', t.Homing]);
-      if (t.MentalAct > 0) items.push(['Mental Act', t.MentalAct]);
+      if (t.MentalAct > 0) items.push(['Mental', t.MentalAct]);
       if (t.Response > 0) items.push(['Response', t.Response]);
       if (distractionRounded > 0) items.push(['Distraction', distractionRounded, D]);
       if (t.Gesture > 0) items.push(['Gesture', t.Gesture]);
@@ -687,11 +810,117 @@ function detectTapComponents(frame) {
 }
 
 function buildKeystrokeFields(frame, inputs) {
-  // Exemplo básico: retorna um array vazio ou implemente sua lógica
-  return [];
+  const fields = [];
+  for (const input of inputs) {
+    // 1. Identificar textos internos visíveis
+    const texts = (input.contentNodes || []).filter(t => t.type === 'TEXT');
+    let digitavel = null;
+
+    // 2. Heurística: se só tem um texto, é o campo digitável
+    if (texts.length === 1) {
+      digitavel = texts[0];
+    } else if (texts.length > 1) {
+      // Se tem labelNode, o campo digitável é o primeiro texto que não é o label
+      if (input.labelNode && texts[0].id === input.labelNode.id) {
+        digitavel = texts[1];
+      } else {
+        digitavel = texts[0];
+      }
+    }
+
+    if (!digitavel) continue;
+
+    // 3. Identificar o tipo do campo (label, hint, placeholder, máscara)
+    let tipo = '';
+    let count = 10; // valor padrão
+    let labelRaw = '';
+    if (input.labelNode && input.labelNode.characters) {
+      labelRaw = input.labelNode.characters.trim();
+    }
+    let placeholder = '';
+    if (digitavel.characters) {
+      placeholder = digitavel.characters.trim();
+    }
+
+    // Tenta identificar pelo label, placeholder ou nome do container
+    let norm = normalizeLabel(labelRaw || placeholder || input.container.name || '');
+    let matched = null;
+    for (const guess of FIELD_GUESSES) {
+      if (guess.test(norm)) {
+        matched = guess;
+        break;
+      }
+    }
+    if (matched) {
+      tipo = matched.canonical;
+      // Se for campo numérico, conte apenas dígitos se já estiver preenchido, senão use padrão
+      if (matched.onlyDigits && digitavel.characters) {
+        const digits = countDigits(digitavel.characters);
+        count = digits > 0 ? digits : matched.count;
+      } else {
+        count = matched.count;
+      }
+    } else if (placeholder) {
+      // Se tem placeholder, usa o tamanho dele como count
+      count = placeholder.length;
+      tipo = placeholder;
+    } else if (digitavel.characters) {
+      // Se já está preenchido, usa o tamanho do preenchido
+      count = digitavel.characters.length;
+      tipo = labelRaw || input.container.name || 'Campo';
+    } else {
+      tipo = labelRaw || input.container.name || 'Campo';
+    }
+
+    // Ajuste: use o label para o relatório, se existir
+    let reportLabel = labelRaw || tipo || input.container.name || 'Campo';
+
+    fields.push({
+      label: tipo,
+      count: count,
+      containerName: reportLabel // <--- agora vai o label no relatório
+    });
+  }
+  return fields;
 }
 
 function buildReadingBreakdown(frame, excludeSet) {
   // Exemplo básico: retorna um objeto vazio ou implemente sua lógica
   return { items: [], total: 0 };
+}
+
+function isInputComponent(node) {
+  if (!node || !node.name) return false;
+  // Só considere containers
+  const validTypes = ['FRAME', 'COMPONENT', 'INSTANCE', 'GROUP', 'SECTION'];
+  if (!validTypes.includes(node.type)) return false;
+  // Nome deve bater com padrão
+  let matchesPattern = false;
+  for (const pattern of INPUT_NAME_PATTERNS) {
+    if (pattern.test(node.name)) {
+      matchesPattern = true;
+      break;
+    }
+  }
+  if (!matchesPattern) return false;
+  // Deve ter pelo menos um filho de texto
+  if (!canFindAll(node)) return false;
+  const hasTextChild = (node.findAll(n => n.type === 'TEXT') || []).length > 0;
+  return hasTextChild;
+}
+
+function isLabelNode(node) {
+  if (!node || !node.name) return false;
+  for (const pattern of LABEL_NAME_PATTERNS) {
+    if (pattern.test(node.name)) return true;
+  }
+  return false;
+}
+
+function isHintNode(node) {
+  if (!node || !node.name) return false;
+  for (const pattern of HINT_NAME_PATTERNS) {
+    if (pattern.test(node.name)) return true;
+  }
+  return false;
 }
