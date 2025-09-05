@@ -35,130 +35,133 @@ const FIELD_GUESSES = [
   { test: s => /\bcep\b/.test(s), canonical: 'CEP', count: 8 }
 ];
 
+/**
+ * TAP_NAME_PATTERNS
+ * 
+ * Lista centralizada de padrões de nomes para identificar elementos clicáveis (tap).
+ * Para adicionar um novo termo, basta incluir um novo regex aqui.
+ * 
+ * Exemplos:
+ * - Botões: button, btn, cta, action, primary, secondary, etc.
+ * - Banners: banner, toast, snackbar, etc.
+ * - Ações comuns: salvar, enviar, concluir, cancelar, etc.
+ * - Termos em português e inglês.
+ */
 const TAP_NAME_PATTERNS = [
-  /button/i,
-  /\bbtn\b/i,
-  /\bcta\b/i,
-  /tap/i,
-  /banner/i,
-  /toast/i,
-  /snackbar/i,
-  /pill/i,
-  /chip/i,
-  /fab\b/i,         // Floating Action Button
-  /action/i,
-  /primary/i,
-  /secondary/i,
-  /tertiary/i,
-  /close\b/i,
-  /dismiss\b/i,
-  /ok\b/i,
-  /confirm\b/i,
-  /cancel\b/i,
-  /continue\b/i,
-  /next\b/i,
-  /previous\b/i,
-  /back\b/i,
-  /voltar\b/i,
-  /avançar\b/i,
-  /concluir\b/i,
-  /finalizar\b/i,
-  /enviar\b/i,
-  /submit\b/i,
-  /salvar\b/i,
-  /save\b/i,
-  /remover\b/i,
-  /delete\b/i,
-  /excluir\b/i,
-  /editar\b/i,
-  /edit\b/i,
-  /adicionar\b/i,
-  /add\b/i,
-  /mais\b/i,
-  /menos\b/i,
-  /item\b/i,
-  /itens\b/i,
-  /select\b/i,
-  /selecionar\b/i,
-  /opção\b/i,
-  /option\b/i,
-  /abrir\b/i,
-  /abrir conta\b/i,
-  /entrar\b/i,
-  /login\b/i,
-  /logout\b/i,
-  /sair\b/i,
-  /acessar\b/i,
-  /detalhes\b/i,
-  /detalhe\b/i,
-  /ver mais\b/i,
-  /vermenos\b/i,
-  /ver\b/i,
-  /ir\b/i,
-  /comprar\b/i,
-  /pagar\b/i,
-  /assinar\b/i,
-  /continuar\b/i,
-  /prosseguir\b/i,
-  /avançar\b/i,
-  /voltar\b/i,
-  /iniciar\b/i,
-  /começar\b/i,
-  /start\b/i,
-  /stop\b/i,
-  /pausar\b/i,
-  /play\b/i,
-  /pause\b/i,
-  /finalizar\b/i,
-  /concluir\b/i,
-  /aceitar\b/i,
-  /recusar\b/i,
-  /recuperar\b/i,
-  /esqueci\b/i,
-  /senha\b/i,
-  /nova senha\b/i,
-  /confirmar\b/i,
-  /sim\b/i,
-  /não\b/i,
-  /yes\b/i,
-  /no\b/i,
-  /ok\b/i,
-  /done\b/i,
-  /ready\b/i,
-  /go\b/i,
-  /send\b/i,
-  /share\b/i,
-  /compartilhar\b/i,
-  /download\b/i,
-  /baixar\b/i,
-  /upload\b/i,
-  /carregar\b/i,
-  /filtrar\b/i,
-  /filter\b/i,
-  /aplicar\b/i,
-  /apply\b/i,
-  /limpar\b/i,
-  /clear\b/i,
-  /buscar\b/i,
-  /search\b/i,
-  /pesquisar\b/i,
-  /favoritar\b/i,
-  /favorito\b/i,
-  /like\b/i,
-  /curtir\b/i,
-  /descurtir\b/i,
-  /dislike\b/i,
-  /seguir\b/i,
-  /follow\b/i,
-  /unfollow\b/i,
-  /compra\b/i,
-  /cart\b/i,
-  /carrinho\b/i,
-  /checkout\b/i,
-  /continuar\b/i,
-  /prosseguir\b/i,
-  /avançar\b/i,
-  /voltar\b/i
+  /button/i,           // button
+  /\bbtn\b/i,          // btn
+  /\bcta\b/i,          // cta
+  /tap/i,              // tap
+  /banner/i,           // banner
+  /toast/i,            // toast
+  /snackbar/i,         // snackbar
+  /pill/i,             // pill
+  /chip/i,             // chip
+  /fab\b/i,            // Floating Action Button
+  /action/i,           // action
+  /primary/i,          // primary
+  /secondary/i,        // secondary
+  /tertiary/i,         // tertiary
+  /close\b/i,          // close
+  /dismiss\b/i,        // dismiss
+  /ok\b/i,             // ok
+  /confirm\b/i,        // confirm
+  /cancel\b/i,         // cancel
+  /continue\b/i,       // continue
+  /next\b/i,           // next
+  /previous\b/i,       // previous
+  /back\b/i,           // back
+  /voltar\b/i,         // voltar
+  /avançar\b/i,        // avançar
+  /concluir\b/i,       // concluir
+  /finalizar\b/i,      // finalizar
+  /enviar\b/i,         // enviar
+  /submit\b/i,         // submit
+  /salvar\b/i,         // salvar
+  /save\b/i,           // save
+  /remover\b/i,        // remover
+  /delete\b/i,         // delete
+  /excluir\b/i,        // excluir
+  /editar\b/i,         // editar
+  /edit\b/i,           // edit
+  /adicionar\b/i,      // adicionar
+  /add\b/i,            // add
+  /mais\b/i,           // mais
+  /menos\b/i,          // menos
+  /item\b/i,           // item
+  /itens\b/i,          // itens
+  /select\b/i,         // select
+  /selecionar\b/i,     // selecionar
+  /opção\b/i,          // opção
+  /option\b/i,         // option
+  /abrir\b/i,          // abrir
+  /abrir conta\b/i,    // abrir conta
+  /entrar\b/i,         // entrar
+  /login\b/i,          // login
+  /logout\b/i,         // logout
+  /sair\b/i,           // sair
+  /acessar\b/i,        // acessar
+  /detalhes\b/i,       // detalhes
+  /detalhe\b/i,        // detalhe
+  /ver mais\b/i,       // ver mais
+  /vermenos\b/i,       // vermenos
+  /ver\b/i,            // ver
+  /ir\b/i,             // ir
+  /comprar\b/i,        // comprar
+  /pagar\b/i,          // pagar
+  /assinar\b/i,        // assinar
+  /continuar\b/i,      // continuar
+  /prosseguir\b/i,     // prosseguir
+  /iniciar\b/i,        // iniciar
+  /começar\b/i,        // começar
+  /start\b/i,          // start
+  /stop\b/i,           // stop
+  /pausar\b/i,         // pausar
+  /play\b/i,           // play
+  /pause\b/i,          // pause
+  /aceitar\b/i,        // aceitar
+  /recusar\b/i,        // recusar
+  /recuperar\b/i,      // recuperar
+  /esqueci\b/i,        // esqueci
+  /senha\b/i,          // senha
+  /nova senha\b/i,     // nova senha
+  /confirmar\b/i,      // confirmar
+  /sim\b/i,            // sim
+  /não\b/i,            // não
+  /yes\b/i,            // yes
+  /no\b/i,             // no
+  /done\b/i,           // done
+  /ready\b/i,          // ready
+  /go\b/i,             // go
+  /send\b/i,           // send
+  /share\b/i,          // share
+  /compartilhar\b/i,   // compartilhar
+  /download\b/i,       // download
+  /baixar\b/i,         // baixar
+  /upload\b/i,         // upload
+  /carregar\b/i,       // carregar
+  /filtrar\b/i,        // filtrar
+  /filter\b/i,         // filter
+  /aplicar\b/i,        // aplicar
+  /apply\b/i,          // apply
+  /limpar\b/i,         // limpar
+  /clear\b/i,          // clear
+  /buscar\b/i,         // buscar
+  /search\b/i,         // search
+  /pesquisar\b/i,      // pesquisar
+  /favoritar\b/i,      // favoritar
+  /favorito\b/i,       // favorito
+  /like\b/i,           // like
+  /curtir\b/i,         // curtir
+  /descurtir\b/i,      // descurtir
+  /dislike\b/i,        // dislike
+  /seguir\b/i,         // seguir
+  /follow\b/i,         // follow
+  /unfollow\b/i,       // unfollow
+  /compra\b/i,         // compra
+  /cart\b/i,           // cart
+  /carrinho\b/i,       // carrinho
+  /checkout\b/i        // checkout
   // Adicione mais padrões aqui no futuro
 ];
 
@@ -435,205 +438,6 @@ function isLikelyInputFieldLabel(raw) {
   }
   return false;
 }
-function detectTapButtons(frame) {
-  var all = frame.findAll(function (n) {
-    return !!n.name && nameLooksLikeButton(n.name);
-  }) || [];
-  var visible = [];
-  for (var i = 0; i < all.length; i++) {
-    if (isIgnoredElement(all[i], frame)) continue;
-    visible.push(all[i]);
-  }
-  var leaves = [];
-  for (var j = 0; j < visible.length; j++) {
-    var node = visible[j];
-    var hasButtonDesc = false;
-    var descendants = canFindAll(node)
-      ? (node.findAll(function (n) { return !!n.name && nameLooksLikeButton(n.name); }) || [])
-      : [];
-    for (var k = 0; k < descendants.length; k++) {
-      if (descendants[k] === node) continue;
-      if (isIgnoredElement(descendants[k], frame)) continue;
-      hasButtonDesc = true; break;
-    }
-    if (!hasButtonDesc) leaves.push(node);
-  }
-  // Não precisa mais filtrar headerBackIds aqui
-  leaves.sort(function (a, b) {
-    var ay = ('y' in a ? a.y : 1e12), by = ('y' in b ? b.y : 1e12);
-    return ay - by;
-  });
-  return leaves;
-}
-function buildKeystrokeFields(frame, inputs) {
-  var fields = [];
-  for (var i = 0; i < inputs.length; i++) {
-    var lblNode = inputs[i].labelNode;
-    if (!lblNode) continue;
-    var lblRaw = (lblNode.characters || '').trim();
-    if (!lblRaw) continue;
-    var norm = normalizeLabel(lblRaw);
-    var matched = null;
-    for (var g = 0; g < FIELD_GUESSES.length; g++) {
-      if (FIELD_GUESSES[g].test(norm)) { matched = FIELD_GUESSES[g]; break; }
-    }
-    if (!matched) continue;
-    var canonical = matched.canonical;
-    var isNumeric = (canonical === 'CPF' || canonical === 'CEP');
-    var count = matched.count;
-    if (isNumeric) {
-      var maxDigits = 0;
-      var contNodes = inputs[i].contentNodes || [];
-      for (var c = 0; c < contNodes.length; c++) {
-        if (!isNodeVisibleInFrame(contNodes[c], frame)) continue;
-        var digits = countDigits(contNodes[c].characters || '');
-        if (digits > maxDigits) maxDigits = digits;
-      }
-      if (maxDigits > 0) count = maxDigits;
-    }
-    var displayName = (inputs[i].container && inputs[i].container.name)
-      ? String(inputs[i].container.name)
-      : (nearestNamedAncestor(lblNode) || 'Input');
-    fields.push({ label: canonical, count: count, containerName: displayName });
-  }
-  return fields;
-}
-
-// buildReadingBreakdown pode usar isIgnoredElement também:
-function buildReadingBreakdown(frame, excludeSet) {
-  excludeSet = excludeSet || {};
-  var texts = frame.findAll(function (n) { return n.type === 'TEXT'; }) || [];
-  var arr = [];
-  var total = 0;
-  var ordered = texts
-    .map(function (t) { return { n: t, y: t.y }; })
-    .sort(function (a, b) { return a.y - b.y; })
-    .map(function (x) { return x.n; });
-  for (var i = 0; i < ordered.length; i++) {
-    var t = ordered[i];
-    if (isIgnoredElement(t, frame)) continue;
-    if (excludeSet[t.id]) continue;
-    var raw = (t.characters || '').trim();
-    if (!raw) continue;
-    var words = countWords(raw);
-    if (words <= 0) continue;
-    var readWords = (words <= 3) ? words : (words * 0.28);
-    var seconds = readWords * 0.3;
-    if (seconds <= 0) continue;
-    var labelName = (t.name && t.name.trim()) ? t.name.trim() : (nearestNamedAncestor(t) || 'Texto');
-    arr.push({ label: labelName + ' (' + words + ')', seconds: seconds });
-    total += seconds;
-  }
-  arr.reverse();
-  return { items: arr, total: total };
-}
-function getHeaderBackButtonIds(frame, buttonLeaves) {
-  var headers = frame.findAll(function (n) { return !!n.name && /header/i.test(n.name); }) || [];
-  var ids = {};
-  for (var h = 0; h < headers.length; h++) {
-    var header = headers[h];
-    if (!isNodeVisibleInFrame(header, frame)) continue;
-    var inHeader = [];
-    for (var i = 0; i < buttonLeaves.length; i++) {
-      if (isDescendantOf(buttonLeaves[i], header)) inHeader.push(buttonLeaves[i]);
-    }
-    if (!inHeader.length) continue;
-    var best = null, bx = 1e12, by = 1e12;
-    for (var j = 0; j < inHeader.length; j++) {
-      var b = inHeader[j];
-      var bb = getAbsBounds(b);
-      var x = bb.x, y = bb.y;
-      if (x < bx || (x === bx && y < by)) { best = b; bx = x; by = y; }
-    }
-    if (best && best.id) ids[best.id] = true;
-  }
-  return ids;
-}
-function detectBannerTaps(frame) {
-  var res = [];
-  var banners = frame.findAll(function (n) { return !!n.name && /banner/i.test(n.name); }) || [];
-  for (var i = 0; i < banners.length; i++) {
-    var b = banners[i];
-    if (isIgnoredElement(b, frame)) continue;
-    var hasVisibleButton = false;
-    if (canFindAll(b)) {
-      var btns = b.findAll(function (n) { return !!n.name && nameLooksLikeButton(n.name); }) || [];
-      for (var k = 0; k < btns.length; k++) {
-        if (isIgnoredElement(btns[k], frame)) continue;
-        hasVisibleButton = true; break;
-      }
-    }
-    if (!hasVisibleButton) res.push(b);
-  }
-  return res;
-}
-function detectSelectItemTaps(frame) {
-  var items = [];
-  var scopes = [];
-  var itemGroups = frame.findAll(function (n) { return !!n.name && /\bitens\b/i.test(n.name); }) || [];
-  for (var g = 0; g < itemGroups.length; g++) {
-    var grp = itemGroups[g];
-    if (isIgnoredElement(grp, frame)) continue;
-    if (!('children' in grp) || !grp.children) continue;
-    var local = 0;
-    for (var c = 0; c < grp.children.length; c++) {
-      var child = grp.children[c];
-      if (isIgnoredElement(child, frame)) continue;
-      items.push(child);
-      local++;
-    }
-    if (local > 0) scopes.push(grp);
-  }
-  var selects = frame.findAll(function (n) { return !!n.name && /select/i.test(n.name); }) || [];
-  for (var s = 0; s < selects.length; s++) {
-    var sel = selects[s];
-    if (isIgnoredElement(sel, frame)) continue;
-    var covered = false;
-    for (var sc = 0; sc < scopes.length; sc++) { if (isDescendantOf(scopes[sc], sel)) { covered = true; break; } }
-    if (covered) continue;
-    if (!('children' in sel) || !sel.children) continue;
-    var localCount = 0;
-    for (var c2 = 0; c2 < sel.children.length; c2++) {
-      var ch = sel.children[c2];
-      if (isIgnoredElement(ch, frame)) continue;
-      var nm = String(ch.name || '').toLowerCase();
-      if (/background|bg|divider|separator/.test(nm)) continue;
-      items.push(ch);
-      localCount++;
-    }
-    if (localCount > 0) scopes.push(sel);
-  }
-  return { items: items, scopes: scopes };
-}
-function detectParallelItemTaps(frame) {
-  var resultItems = [];
-  var scopes = [];
-  var containers = frame.findAll(function (n) {
-    return ('children' in n) && n.children && n.children.length > 0;
-  }) || [];
-  for (var i = 0; i < containers.length; i++) {
-    var parent = containers[i];
-    if (isIgnoredElement(parent, frame)) continue;
-    var candidates = [];
-    for (var c = 0; c < parent.children.length; c++) {
-      var ch = parent.children[c];
-      var nm = String(ch.name || '');
-      if (!/item/i.test(nm)) continue;
-      if (isIgnoredElement(ch, frame)) continue;
-      if (containsVisibleButton(ch, frame)) continue;
-      candidates.push(ch);
-    }
-    if (candidates.length >= 2) {
-      for (var x = 0; x < candidates.length; x++) resultItems.push(candidates[x]);
-      scopes.push(parent);
-    }
-  }
-  resultItems.sort(function (a, b) {
-    var ay = ('y' in a ? a.y : 1e12), by = ('y' in b ? b.y : 1e12);
-    return ay - by;
-  });
-  return { items: resultItems, scopes: scopes };
-}
 
 /* =====================
  * Análise + anotação
@@ -664,31 +468,15 @@ async function generateAnalysisAutoFromSelection() {
         }
       }
       var readingBD = buildReadingBreakdown(frame, exclude);
-      var buttonLeaves = detectTapButtons(frame);
-      var bannerNodes = detectBannerTaps(frame);
-      var parallel = detectParallelItemTaps(frame);
-      var selectItems = parallel.items || [];
-      var itemScopes = parallel.scopes || [];
-      var buttonLeavesFiltered = [];
-      for (var b = 0; b < buttonLeaves.length; b++) {
-        var leaf = buttonLeaves[b];
-        var inside = false;
-        for (var s = 0; s < itemScopes.length; s++) {
-          if (isDescendantOf(leaf, itemScopes[s])) { inside = true; break; }
-        }
-        if (!inside) buttonLeavesFiltered.push(leaf);
-      }
+
+      // NOVO: Use apenas detectTapComponents para identificar todos os taps
+      var tapNodes = detectTapComponents(frame);
       var tapSubs = [];
-      for (var tni = 0; tni < buttonLeavesFiltered.length; tni++) {
-        tapSubs.push({ label: buttonLeavesFiltered[tni].name, seconds: round2(TIME.Tap) });
-      }
-      for (var bn = 0; bn < bannerNodes.length; bn++) {
-        tapSubs.push({ label: bannerNodes[bn].name || 'Banner', seconds: round2(TIME.Tap) });
-      }
-      for (var si = 0; si < selectItems.length; si++) {
-        tapSubs.push({ label: selectItems[si].name || 'Item', seconds: round2(TIME.Tap) });
+      for (var tni = 0; tni < tapNodes.length; tni++) {
+        tapSubs.push({ label: tapNodes[tni].name || 'Tap', seconds: round2(TIME.Tap) });
       }
       var counts = { Tap: tapSubs.length, Swipe: 0, Drag: 0, Homing: 0, Pinch: 0, Zoom: 0, MentalAct: 0 };
+
       var extraKeystrokes = 0;
       var distractionKey = 'none';
       var D = DISTRACTION[distractionKey];
@@ -862,46 +650,10 @@ function isIgnoredElement(node, rootFrame) {
   if (!isNodeVisibleInFrame(node, rootFrame)) return true;
   if (isInsideKeyboard(node, rootFrame)) return true;
   if (isInsideStatusBar(node, rootFrame)) return true;
-
-  // Ignorar botões de voltar em headers
-  if (isHeaderBackButton(node, rootFrame)) return true;
-
   // Futuro: adicionar mais regras aqui
   return false;
 }
 
-// Função auxiliar para identificar botões de voltar em headers
-function isHeaderBackButton(node, rootFrame) {
-  // Só faz sentido para botões
-  if (!nameLooksLikeButton(node.name)) return false;
-
-  // Procura headers na tela
-  var headers = rootFrame.findAll(function (n) {
-    return !!n.name && /header/i.test(n.name);
-  }) || [];
-
-  for (var h = 0; h < headers.length; h++) {
-    var header = headers[h];
-    if (!isNodeVisibleInFrame(header, rootFrame)) continue;
-    if (!isDescendantOf(node, header)) continue;
-
-    // Busca o botão mais à esquerda e acima dentro do header
-    var btns = header.findAll(function (n) {
-      return !!n.name && nameLooksLikeButton(n.name) && isNodeVisibleInFrame(n, rootFrame);
-    }) || [];
-    if (!btns.length) continue;
-
-    var best = null, bx = 1e12, by = 1e12;
-    for (var j = 0; j < btns.length; j++) {
-      var b = btns[j];
-      var bb = getAbsBounds(b);
-      var x = bb.x, y = bb.y;
-      if (x < bx || (x === bx && y < by)) { best = b; bx = x; by = y; }
-    }
-    if (best && best.id === node.id) return true;
-  }
-  return false;
-}
 function isTapComponent(node) {
   if (!node || !node.name) return false;
   for (const pattern of TAP_NAME_PATTERNS) {
@@ -909,6 +661,7 @@ function isTapComponent(node) {
   }
   return false;
 }
+
 function detectTapComponents(frame) {
   // 1. Encontre todos os nodes que são tap
   const allTapNodes = frame.findAll(n => isTapComponent(n) && !isIgnoredElement(n, frame));
@@ -931,4 +684,14 @@ function detectTapComponents(frame) {
   }
 
   return tapLeaves;
+}
+
+function buildKeystrokeFields(frame, inputs) {
+  // Exemplo básico: retorna um array vazio ou implemente sua lógica
+  return [];
+}
+
+function buildReadingBreakdown(frame, excludeSet) {
+  // Exemplo básico: retorna um objeto vazio ou implemente sua lógica
+  return { items: [], total: 0 };
 }
